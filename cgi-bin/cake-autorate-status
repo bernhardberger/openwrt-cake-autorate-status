@@ -1,0 +1,41 @@
+#!/bin/sh
+echo "Content-Type: application/json"
+echo "Access-Control-Allow-Origin: *"
+echo ""
+
+LOG=/tmp/log/cake-autorate.primary.log
+DL_IF=ifb4eth1
+UL_IF=eth1
+
+# Last SUMMARY line fields:
+# SUMMARY; datetime; timestamp; dl_achieved; ul_achieved; dl_sum_delays; ul_sum_delays; dl_avg_owd_delta; ul_avg_owd_delta; dl_condition; ul_condition; cake_dl_rate; cake_ul_rate
+SUMMARY=$(grep "^SUMMARY" "$LOG" 2>/dev/null | awk -F';' 'NF>=13' | tail -1)
+
+if [ -z "$SUMMARY" ]; then
+  echo "{\"error\": \"no data\"}"
+  exit 0
+fi
+
+DL_ACHIEVED=$(echo "$SUMMARY" | cut -d';' -f4 | tr -d ' ')
+UL_ACHIEVED=$(echo "$SUMMARY" | cut -d';' -f5 | tr -d ' ')
+DL_OWD=$(echo "$SUMMARY" | cut -d';' -f8 | tr -d ' ')
+UL_OWD=$(echo "$SUMMARY" | cut -d';' -f9 | tr -d ' ')
+DL_COND=$(echo "$SUMMARY" | cut -d';' -f10 | tr -d ' ')
+UL_COND=$(echo "$SUMMARY" | cut -d';' -f11 | tr -d ' ')
+CAKE_DL=$(echo "$SUMMARY" | cut -d';' -f12 | tr -d ' ')
+CAKE_UL=$(echo "$SUMMARY" | cut -d';' -f13 | tr -d ' ')
+LOG_TIME=$(echo "$SUMMARY" | cut -d';' -f2 | tr -d ' ')
+
+# tc qdisc current shaper rates (kernel confirmation)
+TC_DL=$(tc qdisc show dev "$DL_IF" 2>/dev/null | grep -o 'bandwidth [0-9]*[KMG]bit' | head -1 | awk '{print $2}')
+TC_UL=$(tc qdisc show dev "$UL_IF" 2>/dev/null | grep -o 'bandwidth [0-9]*[KMG]bit' | head -1 | awk '{print $2}')
+
+printf '{"timestamp":"%s","dl_achieved_mbps":%.1f,"ul_achieved_mbps":%.1f,"dl_shaper_mbps":%.1f,"ul_shaper_mbps":%.1f,"dl_owd_delta_ms":%.1f,"ul_owd_delta_ms":%.1f,"dl_condition":"%s","ul_condition":"%s","tc_dl":"%s","tc_ul":"%s"}\n' \
+  "$LOG_TIME" \
+  "$(echo "$DL_ACHIEVED" | awk '{printf "%.1f", $1/1000}')" \
+  "$(echo "$UL_ACHIEVED" | awk '{printf "%.1f", $1/1000}')" \
+  "$(echo "$CAKE_DL" | awk '{printf "%.1f", $1/1000}')" \
+  "$(echo "$CAKE_UL" | awk '{printf "%.1f", $1/1000}')" \
+  "$(echo "$DL_OWD" | awk '{printf "%.1f", $1/1000}')" \
+  "$(echo "$UL_OWD" | awk '{printf "%.1f", $1/1000}')" \
+  "$DL_COND" "$UL_COND" "$TC_DL" "$TC_UL"

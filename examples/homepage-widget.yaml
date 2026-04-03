@@ -1,0 +1,29 @@
+# Homepage customapi widget for cake-autorate status
+# Add this to your services.yaml under the desired group
+# Docs: https://gethomepage.dev/widgets/services/customapi/
+
+- CAKE QoS:
+    icon: mdi-speedometer
+    href: http://192.168.8.1/cgi-bin/cake-autorate-status
+    description: OpenWrt CAKE autorate
+    widget:
+      type: customapi
+      url: http://192.168.8.1/cgi-bin/cake-autorate-status
+      refreshInterval: 10000
+      mappings:
+        - field: dl_shaper_mbps
+          label: DL Shaper
+          format: float
+          suffix: " Mbit/s"
+          scale: 1
+        - field: ul_shaper_mbps
+          label: UL Shaper
+          format: float
+          suffix: " Mbit/s"
+          scale: 1
+        - field: dl_condition
+          label: DL
+          format: text
+        - field: ul_condition
+          label: UL
+          format: text
