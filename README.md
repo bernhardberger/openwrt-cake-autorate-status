@@ -1,3 +1,5 @@
+> **Retired.** For live cake-autorate metrics, use the upstream [`mqtt-publisher.sh`](https://github.com/lynxthecat/cake-autorate/blob/master/mqtt-publisher.sh), which publishes them to MQTT and Home Assistant. This script still works as a minimal example of a CGI status endpoint on OpenWrt, but it isn't maintained.
+
 # openwrt-cake-autorate-status
 
 A minimal CGI endpoint for [cake-autorate](https://github.com/lynxthecat/cake-autorate) running on OpenWrt.
